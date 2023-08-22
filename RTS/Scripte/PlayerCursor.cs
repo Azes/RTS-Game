@@ -4,13 +4,23 @@ using UnityEngine;
 using UnityEngine.UI;
 public class PlayerCursor : MonoBehaviour
 {
+   
+    public MainUI mui;
+
+    
 
     public Image selectionRectImage;
-    
+
     private RectTransform rectTransform;
     public RectTransform canvas;
     private Camera _c;
     public List<GameObject> selectedObjects = new List<GameObject>();
+
+
+    //new
+    public IBuilding build;
+    
+    
     bool isDrag, onSelecting;
     Vector3 lsmp = Vector3.zero;
     Vector2 initialMousePos;
@@ -32,58 +42,59 @@ public class PlayerCursor : MonoBehaviour
 
     private void Update()
     {
+        
+        if (MainUI.inUI) return;
 
         bool dsel = Input.GetKey(KeyCode.LeftShift);
 
+            if (Input.GetMouseButtonDown(1)) singelSelect(dsel);
 
-        if (Input.GetMouseButtonDown(1)) singelSelect(dsel);
+            if (Input.GetMouseButtonDown(0))
+            {
+                initialMousePos = Input.mousePosition;
+                initialMousePos.x = initialMousePos.x - (Screen.width / 2);
+                initialMousePos.y = initialMousePos.y - (Screen.height / 2);
 
-        if (Input.GetMouseButtonDown(0))
-        {
-            initialMousePos = Input.mousePosition;
-            initialMousePos.x = initialMousePos.x - (Screen.width / 2);
-            initialMousePos.y = initialMousePos.y - (Screen.height / 2);
-           
-            rectTransform.anchoredPosition = initialMousePos;
-            rectTransform.sizeDelta = Vector2.zero;
-            lsmp = Input.mousePosition;
-        }
-        
-      
-        if (isMouseDrag(2))
-        {
-            if (!selectionRectImage.gameObject.activeInHierarchy)
-                selectionRectImage.gameObject.SetActive(true);
+                rectTransform.anchoredPosition = initialMousePos;
+                rectTransform.sizeDelta = Vector2.zero;
+                lsmp = Input.mousePosition;
+            }
 
-            Vector2 currentMousePos = Input.mousePosition;
-            currentMousePos.x = currentMousePos.x - (Screen.width / 2);
-            currentMousePos.y = currentMousePos.y - (Screen.height / 2);
-            Vector2 size = currentMousePos - initialMousePos;
 
-            // Ensure width and height are positive for proper scaling
-            size.x = Mathf.Abs(size.x);
-            size.y = Mathf.Abs(size.y);
+            if (isMouseDrag(2))
+            {
+                if (!selectionRectImage.gameObject.activeInHierarchy)
+                    selectionRectImage.gameObject.SetActive(true);
 
-            rectTransform.sizeDelta = size;
+                Vector2 currentMousePos = Input.mousePosition;
+                currentMousePos.x = currentMousePos.x - (Screen.width / 2);
+                currentMousePos.y = currentMousePos.y - (Screen.height / 2);
+                Vector2 size = currentMousePos - initialMousePos;
 
-            Vector2 center = (initialMousePos + currentMousePos) * 0.5f;
-            rectTransform.anchoredPosition = center;
+                // Ensure width and height are positive for proper scaling
+                size.x = Mathf.Abs(size.x);
+                size.y = Mathf.Abs(size.y);
 
-            if(onSelecting) dsel = false;
+                rectTransform.sizeDelta = size;
 
-            GetObjectsInSelect(dsel);
-        }
-        else
-        {
-            if (selectionRectImage.gameObject.activeInHierarchy)
-                selectionRectImage.gameObject.SetActive(false);
+                Vector2 center = (initialMousePos + currentMousePos) * 0.5f;
+                rectTransform.anchoredPosition = center;
 
-            if (Input.GetMouseButtonDown(0)) singelSelect(dsel);
-        }
+                if (onSelecting) dsel = false;
 
+                GetObjectsInSelect(dsel);
+            }
+            else
+            {
+                if (selectionRectImage.gameObject.activeInHierarchy)
+                    selectionRectImage.gameObject.SetActive(false);
+
+                if (Input.GetMouseButtonDown(0)) singelSelect(dsel);
+            }
+       
     }
 
-    
+
     public bool isMouseDrag(float min = 0f)
     {
         bool isMouseDown;
@@ -92,7 +103,7 @@ public class PlayerCursor : MonoBehaviour
 
         bool positionChanged = Vector3.Distance(currentMousePosition, lsmp) >= min;
 
-        
+
         if (currentMouseDown)
         {
             isMouseDown = true;
@@ -113,7 +124,7 @@ public class PlayerCursor : MonoBehaviour
 
     void singelSelect(bool msel = false)
     {
-        
+
         Vector3 ip = Input.mousePosition;
 
         Ray r = _c.ScreenPointToRay(new Vector3(ip.x, ip.y, _c.nearClipPlane));
@@ -123,19 +134,28 @@ public class PlayerCursor : MonoBehaviour
             if (hit.collider.GetComponent<IHuman>())
             {
                 onSelecting = true;
+               
+                GameObject ho = hit.collider.gameObject;
 
                 if (msel)
                 {
-                    if (!selectedObjects.Contains(hit.collider.gameObject))
+                    
+                    if (!selectedObjects.Contains(ho))
                     {
-                        hit.collider.GetComponent<IHuman>().isSelectet = true;
-                        selectedObjects.Add(hit.collider.gameObject);
-                        
+                      
+                        ho.GetComponent<IHuman>().isSelectet = true;
+                        selectedObjects.Add(ho);
+
+                        mui.humans.Add(ho.GetComponent<IHuman>());
+
                     }
                     else
                     {
-                        hit.collider.GetComponent<IHuman>().isSelectet = false;
-                        selectedObjects.Remove(hit.collider.gameObject);
+                        
+                        ho.GetComponent<IHuman>().isSelectet = false;
+                        selectedObjects.Remove(ho);
+
+                        mui.humans.Remove(ho.GetComponent<IHuman>());
                     }
                 }
                 else
@@ -143,11 +163,13 @@ public class PlayerCursor : MonoBehaviour
                     for (int i = 0; i < selectedObjects.Count; i++)
                         selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
 
+                    mui.humans.Clear();
                     selectedObjects.Clear();
 
-                    hit.collider.GetComponent<IHuman>().isSelectet = true;
-                    selectedObjects.Add(hit.collider.gameObject);
-                   
+                    ho.GetComponent<IHuman>().isSelectet = true;
+                    selectedObjects.Add(ho);
+
+                    mui.humans.Add(ho.GetComponent<IHuman>());
                 }
             }
             else
@@ -157,35 +179,54 @@ public class PlayerCursor : MonoBehaviour
                 for (int i = 0; i < selectedObjects.Count; i++)
                     selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
 
+                
+                mui.humans.Clear();
                 selectedObjects.Clear();
 
                 onSelecting = false;
+
+
+                //new 
+
+                if (hit.collider.GetComponent<IBuilding>())
+                {
+                    build = hit.collider.GetComponent<IBuilding>();
+                    mui.build = build;
+                }
+                else
+                {
+                    build = null;
+                    mui.build = null;
+                }
             }
         }
     }
 
-    
+
     public void GetObjectsInSelect(bool delete = false)
     {
         Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_c);
-        
+
         objectsInCameraView.Clear();
 
 
-        foreach (GameObject go in FindObjectsOfType<GameObject>())
+        foreach (GameObject go in FindObjectsByType<GameObject>(FindObjectsSortMode.None))
         {
             Collider collider = go.GetComponent<Collider>();
 
             if (collider != null && GeometryUtility.TestPlanesAABB(planes, collider.bounds))
             {
-               if(!objectsInCameraView.Contains(go)) objectsInCameraView.Add(go);
+                if (!objectsInCameraView.Contains(go)) objectsInCameraView.Add(go);
             }
         }
 
 
-        for (int i = 0;i < objectsInCameraView.Count; i++)
+        for (int i = 0; i < objectsInCameraView.Count; i++)
         {
-            Vector3 sp = _c.WorldToScreenPoint(objectsInCameraView[i].transform.position);
+           
+            GameObject co = objectsInCameraView[i];
+
+            Vector3 sp = _c.WorldToScreenPoint(co.transform.position);
 
             rectTransform.GetWorldCorners(cc);
 
@@ -194,19 +235,22 @@ public class PlayerCursor : MonoBehaviour
             {
                 if (delete)
                 {
-                    if (selectedObjects.Contains(objectsInCameraView[i]))
+                    if (selectedObjects.Contains(co))
                     {
-                        objectsInCameraView[i].GetComponent<IHuman>().isSelectet = false;
-                        selectedObjects.Remove(objectsInCameraView[i]);
+                        co.GetComponent<IHuman>().isSelectet = false;
+                        selectedObjects.Remove(co);
+
+                        mui.humans.Remove(co.GetComponent<IHuman>());
                     }
-                   
                 }
                 else
                 {
-                    if (!selectedObjects.Contains(objectsInCameraView[i]) && objectsInCameraView[i].GetComponent<IHuman>())
+                    if (!selectedObjects.Contains(co) && co.GetComponent<IHuman>())
                     {
-                        objectsInCameraView[i].GetComponent<IHuman>().isSelectet = true;
-                        selectedObjects.Add(objectsInCameraView[i]);
+                        co.GetComponent<IHuman>().isSelectet = true;
+                        selectedObjects.Add(co);
+
+                        mui.humans.Add(co.GetComponent<IHuman>());
                     }
                 }
             }
@@ -214,13 +258,48 @@ public class PlayerCursor : MonoBehaviour
             {
                 if (delete || onSelecting) continue;
 
-                if (selectedObjects.Contains(objectsInCameraView[i]) && objectsInCameraView[i].GetComponent<IHuman>())
+                if (selectedObjects.Contains(co) && co.GetComponent<IHuman>())
                 {
-                    objectsInCameraView[i].GetComponent<IHuman>().isSelectet = false;
-                    selectedObjects.Remove(objectsInCameraView[i]);
+                    co.GetComponent<IHuman>().isSelectet = false;
+                    selectedObjects.Remove(co);
+
+                    mui.humans.Remove(co.GetComponent<IHuman>());
                 }
             }
         }
     }
-   
+
+
+    // new 
+
+    //hilfs methode um selections zu removen und deSelecten
+    public void removeSelcetion(GameObject g)
+    {
+        g.GetComponent<IHuman>().isSelectet = false;
+        selectedObjects.Remove(g);
+    }
+
+    //hilfs methode um alle selection zu löschen
+    public void ClearSelection()
+    {
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
+        }
+        selectedObjects.Clear();
+    }
+
+    //methode um ein einzelnde einheit überandere scripte auszuwählen
+    public void singleSelectObject(GameObject g)
+    {
+        for (int i = 0; i < selectedObjects.Count; i++)
+        {
+            selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
+        }
+
+        selectedObjects.Clear();
+        selectedObjects.Add(g);
+        selectedObjects[0].GetComponent<IHuman>().isSelectet = true;
+        
+    }
 }
