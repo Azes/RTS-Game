@@ -8,12 +8,12 @@ public class MainUI : MonoBehaviour
 {
 
     public static bool inUI;
-
-    /// alles neue ab hier
+    public static bool inWorldUI;
+    public GameObject costeObject, buildingInfoObject;
 
     public PlayerCursor cursor;
     public RectTransform UI_Frame;
-    public float blendSpeed, step;
+    public float step;
     float bbuff;
 
     public TextMeshProUGUI gold_value, stone_value, wood_value, food_value, pop_value, maxpop_value;
@@ -22,7 +22,7 @@ public class MainUI : MonoBehaviour
     public IBuilding build;
 
 
-    /// 
+    
 
     //Human menu
     //ui gameobject für einheiten
@@ -82,7 +82,7 @@ public class MainUI : MonoBehaviour
 
     Trigger singleTigger = new Trigger();
 
-    /// new stuff
+   
     Trigger singleOrGroup = new Trigger();
 
 
@@ -118,8 +118,13 @@ public class MainUI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //new 
-        BlendUI(inUI);
+
+        if (inUI) inWorldUI = false;
+
+        bool onb = cursor.buildSystem.onBuild;
+        if (onb) inUI = false;
+
+        BlendUI();
 
         if (build != null)
         {
@@ -133,6 +138,16 @@ public class MainUI : MonoBehaviour
         {
             if (rathausUI.activeInHierarchy) rathausUI.SetActive(false);
         }
+
+        if (onb)
+        {
+            build = null;
+            return;
+        }
+
+
+        //old
+
 
         //
 
@@ -286,7 +301,7 @@ public class MainUI : MonoBehaviour
             if (singleIndex == 0) singleInfo_Name.text = "Villager";
             else if (singleIndex == 1) singleInfo_Name.text = "Knight";
             else if (singleIndex == 2) singleInfo_Name.text = "Bowman";
-            else if (singleIndex == 3) singleInfo_Name.text = "Heiler";//new
+            else if (singleIndex == 3) singleInfo_Name.text = "Heiler";
 
             //aktiviert nur die spezifischen feld für die jeweilige einheit
             for (int k = 0; k < activateInfosList[singleIndex].Length; k++)
@@ -705,7 +720,6 @@ public class MainUI : MonoBehaviour
     }
 
 
-    //all new ab hier
 
     //methode um alle Einheiten einer klasse auszuwählen
     public void seletcGroupWithIcon(int index)
@@ -764,24 +778,29 @@ public class MainUI : MonoBehaviour
         cursor.singleSelectObject(h.gameObject);   
     }
 
+    //new
     //methode die die UI ein und ausblendet
-    public void BlendUI(bool it)
+    public void BlendUI()
     {
+        var frame =  UI_Frame.anchoredPosition;
+
         if (inUI || humans.Count > 0 || build != null)
         {
-            if (UI_Frame.anchoredPosition.y < 210)
+            
+            if (frame.y < 210)
             {
-                bbuff += Time.deltaTime * blendSpeed;
-
-                if (bbuff >= 1)
+                bbuff += Time.deltaTime;
+                
+                if (bbuff > .01f)
                 {
                     bbuff = 0;
-                    UI_Frame.anchoredPosition += new Vector2(0, step);
+                    frame += new Vector2(0, step);
+                    if (frame.y > 210) frame = new Vector2(frame.x, 210);
                 }
             }
             else
             {
-                UI_Frame.anchoredPosition = new Vector2(UI_Frame.anchoredPosition.x, 210);
+                frame = new Vector2(frame.x, 210);
                 bbuff = 0;
             }
         }
@@ -789,22 +808,28 @@ public class MainUI : MonoBehaviour
         {
             if (humans.Count != 0) return;
 
-            if (UI_Frame.anchoredPosition.y > -50)
+            if (frame.y > -50)
             {
-                bbuff += Time.deltaTime * blendSpeed;
+                bbuff += Time.deltaTime;
 
-                if (bbuff >= 1)
+                if (bbuff > .01f)
                 {
                     bbuff = 0;
-                    UI_Frame.anchoredPosition -= new Vector2(0, step);
+                    frame -= new Vector2(0, step);
+                    if (frame.y < -50) frame = new Vector2(frame.x, -50);
                 }
             }
             else
             {
                 bbuff = 0;
-                UI_Frame.anchoredPosition = new Vector2(UI_Frame.anchoredPosition.x, -50);
+                frame = new Vector2(frame.x, -50);
             }
         }
+
+        UI_Frame.anchoredPosition = frame;
     }
+
+
+   
 
 }

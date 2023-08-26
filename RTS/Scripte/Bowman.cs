@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Bowman : IHuman
 {
@@ -13,6 +14,8 @@ public class Bowman : IHuman
     // Start is called before the first frame update
     void Start()
     {
+        agent = GetComponent<NavMeshAgent>();
+        agent.speed = Speed;
         currentHealth = Health;
         nc = om.GetColor("_BaseColor");
         _m = Instantiate(om);
@@ -20,8 +23,7 @@ public class Bowman : IHuman
 
     }
 
-    // Update is called once per frame
-    void Update()
+    protected override void nextUpdate()
     {
         if (isSelectet != toggel)
         {

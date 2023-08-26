@@ -6,6 +6,7 @@ using UnityEngine;
 public class StadtCentrum : IBuilding
 {
 
+
     //ressoucres
     public int Gold, Stone, Wood, Food, Population, MaxPopulation = 25;
     int gbuff, sbuff, wbuff, fbuff, pbuff, mpbuff;
@@ -13,7 +14,8 @@ public class StadtCentrum : IBuilding
 
     //Humans
     public GameObject humanPrebas;
-    public Transform spawn;
+    //new
+    public Transform Startspawn, endSpawn;
 
     public List<IHuman> ALL_HUMANS = new List<IHuman>();
 
@@ -22,6 +24,11 @@ public class StadtCentrum : IBuilding
     public ProcessElement pe;
 
     int healthbuff;
+
+
+    //new buildingsystem
+    public IBuilding[] buildings;
+
 
     // Start is called before the first frame update
     void Start()
@@ -43,11 +50,12 @@ public class StadtCentrum : IBuilding
             bool can = (Population + 1 < MaxPopulation ? true : false);
          
             if (can)
-            {
-                IHuman human = pe.spawnHuman(spawn, true).GetComponent<IHuman>();
-                ALL_HUMANS.Add(human);
-                Population = ALL_HUMANS.Count;
-            }
+            {//new
+               // IHuman human = pe.spawnHuman(Startspawn, true).GetComponent<IHuman>();
+               // ALL_HUMANS.Add(human);
+               // human.walkTo(endSpawn.position, 1);
+               // Population = ALL_HUMANS.Count;
+            }  //
         }
         
     }
@@ -110,4 +118,38 @@ public class StadtCentrum : IBuilding
         }
     }
 
+    //new
+    public void createBuilding(int index)
+    {
+        IINFO i = buildings[index].GetComponent<IINFO>();
+        
+        if(Gold - i.costInfo.Gold > 0 &&
+            Stone - i.costInfo.Stone > 0 &&
+            Wood - i.costInfo.Wood > 0 &&
+            Food - i.costInfo.Food > 0)
+        {
+            Gold -= i.costInfo.Gold;
+            Stone -= i.costInfo.Stone;
+            Wood -= i.costInfo.Wood;
+            Food -= i.costInfo.Food;
+
+            Debug.Log("pressed");
+            mui.cursor.buildSystem.startToBuild(index);
+        }
+        else
+        {
+            //nicht genug ressourcen sound apspielen
+        }
+    }
+
+
+    public override void setBuilding(StadtCentrum sc)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void onDestoryBuilding(StadtCentrum sc)
+    {
+        throw new System.NotImplementedException();
+    }
 }

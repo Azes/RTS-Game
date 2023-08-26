@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Heiler : IHuman
 {
@@ -15,15 +16,15 @@ public class Heiler : IHuman
     // Start is called before the first frame update
     void Start()
     {
-
+        agent=GetComponent<NavMeshAgent>();
+        agent.speed = Speed;
         _m = Instantiate(stM);
         GetComponent<Renderer>().material = _m;
 
         or = _m.GetColor("_BaseColor");
     }
 
-    // Update is called once per frame
-    void Update()
+    protected override void nextUpdate()
     {
         if (isSelectet != toggel)
         {

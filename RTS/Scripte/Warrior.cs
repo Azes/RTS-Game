@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Warrior : IHuman
 {
@@ -12,15 +13,19 @@ public class Warrior : IHuman
     // Start is called before the first frame update
     void Start()
     {
+        //new 
+        agent = GetComponent<NavMeshAgent>();
+        agent.speed = Speed;
+        //
+
         currentHealth = Health;
         nc = om.GetColor("_BaseColor");
         _m = Instantiate(om);
         GetComponent<Renderer>().material = _m;
 
     }
-
-    // Update is called once per frame
-    void Update()
+    //new
+    protected override void nextUpdate()
     {
         if (isSelectet != toggel)
         {
@@ -28,8 +33,8 @@ public class Warrior : IHuman
             if (isSelectet) _m.SetColor("_BaseColor", typeColor);
             else _m.SetColor("_BaseColor", nc);
         }
+
         
-        //new
         if (isDead()) Destroy(gameObject);
     }
 }

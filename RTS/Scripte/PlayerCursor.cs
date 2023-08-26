@@ -4,20 +4,22 @@ using UnityEngine;
 using UnityEngine.UI;
 public class PlayerCursor : MonoBehaviour
 {
-   
+    public StadtCentrum sc;
+    public Camera _c;
+    public BuildSystem buildSystem;
+
+
+
     public MainUI mui;
-
-    
-
     public Image selectionRectImage;
 
     private RectTransform rectTransform;
     public RectTransform canvas;
-    private Camera _c;
+
+    
     public List<GameObject> selectedObjects = new List<GameObject>();
 
 
-    //new
     public IBuilding build;
     
     
@@ -31,7 +33,9 @@ public class PlayerCursor : MonoBehaviour
 
     private void Start()
     {
-        _c = Camera.main;
+        _c = GetComponent<Camera>();
+        buildSystem = GetComponent<BuildSystem>();
+
         lsmp = Input.mousePosition;
 
         rectTransform = selectionRectImage.GetComponent<RectTransform>();
@@ -43,13 +47,19 @@ public class PlayerCursor : MonoBehaviour
     private void Update()
     {
         
-        if (MainUI.inUI) return;
+        if (MainUI.inUI || MainUI.inWorldUI || buildSystem.onBuild) return;
 
         bool dsel = Input.GetKey(KeyCode.LeftShift);
 
-            if (Input.GetMouseButtonDown(1)) singelSelect(dsel);
+        
+        
+        if (Input.GetMouseButtonDown(1)) singelSelect(dsel, true);
+        
 
-            if (Input.GetMouseButtonDown(0))
+        
+
+
+        if (Input.GetMouseButtonDown(0))
             {
                 initialMousePos = Input.mousePosition;
                 initialMousePos.x = initialMousePos.x - (Screen.width / 2);
@@ -121,8 +131,9 @@ public class PlayerCursor : MonoBehaviour
         return isMouseDown && isDrag;
     }
 
-
-    void singelSelect(bool msel = false)
+    //new
+    bool setTarget;Vector3 hitpos;
+    void singelSelect(bool msel = false, bool isleft = false)
     {
 
         Vector3 ip = Input.mousePosition;
@@ -131,6 +142,9 @@ public class PlayerCursor : MonoBehaviour
 
         if (Physics.Raycast(r, out hit, Mathf.Infinity))
         {
+            setTarget = true;
+            hitpos = hit.point;
+
             if (hit.collider.GetComponent<IHuman>())
             {
                 onSelecting = true;
@@ -160,6 +174,7 @@ public class PlayerCursor : MonoBehaviour
                 }
                 else
                 {
+
                     for (int i = 0; i < selectedObjects.Count; i++)
                         selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
 
@@ -176,20 +191,15 @@ public class PlayerCursor : MonoBehaviour
             {
                 if (msel) return;
 
-                for (int i = 0; i < selectedObjects.Count; i++)
-                    selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
-
-                
-                mui.humans.Clear();
-                selectedObjects.Clear();
-
                 onSelecting = false;
-
-
-                //new 
 
                 if (hit.collider.GetComponent<IBuilding>())
                 {
+                    for (int i = 0; i < selectedObjects.Count; i++)
+                        selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
+                    mui.humans.Clear();
+                    selectedObjects.Clear();
+
                     build = hit.collider.GetComponent<IBuilding>();
                     mui.build = build;
                 }
@@ -198,10 +208,30 @@ public class PlayerCursor : MonoBehaviour
                     build = null;
                     mui.build = null;
                 }
+
+
+               // if (isleft)
+               // {
+               //     for (int i = 0; i < selectedObjects.Count; i++)
+               //         selectedObjects[i].GetComponent<IHuman>().isSelectet = false;
+               //
+               //     mui.humans.Clear();
+               //     selectedObjects.Clear();
+               // }
+               // else
+               // {
+               //     for (int i = 0; i < selectedObjects.Count; i++)
+               //     {
+               //         selectedObjects[i].GetComponent<IHuman>().setWalkTarget(hit.point, 1f, i, selectedObjects.Count, 2f);
+               //     }
+               // }
+
             }
         }
     }
 
+
+    
 
     public void GetObjectsInSelect(bool delete = false)
     {
@@ -270,8 +300,6 @@ public class PlayerCursor : MonoBehaviour
     }
 
 
-    // new 
-
     //hilfs methode um selections zu removen und deSelecten
     public void removeSelcetion(GameObject g)
     {
@@ -301,5 +329,25 @@ public class PlayerCursor : MonoBehaviour
         selectedObjects.Add(g);
         selectedObjects[0].GetComponent<IHuman>().isSelectet = true;
         
+    }
+
+
+    //new
+    private static float doubleClickTime = 0.3f; // Zeitintervall für Doppelklick in Sekunden
+    private static float lastClickTime = 0f;
+
+    public static bool DoubleClick(int index)
+    {
+        if (Input.GetMouseButtonDown(index))
+        {
+            float currentTime = Time.time;
+            if (currentTime - lastClickTime < doubleClickTime)
+            {
+                lastClickTime = 0f; // Setze den Zeitstempel zurück
+                return true; // Doppelklick wurde erkannt
+            }
+            lastClickTime = currentTime;
+        }
+        return false; // Kein Doppelklick
     }
 }
